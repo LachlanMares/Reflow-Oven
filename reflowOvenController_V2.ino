@@ -373,12 +373,12 @@ void loop()
   if(abs(millis() - lastReadSensor) > SENSOR_SAMPLING_TIME)                                 // Time to read thermocouple?
   {
     newInput[0] = thermocouple.readThermocouple(CELSIUS);                                   // Get new temperature reading
-	  if (thermocoupleFault(newInput[0]))                                                     // If error reported
-	  {
+    if (thermocoupleFault(newInput[0]))                                                     // If error reported
+    {
       readFaultCounter++;                                                                   // Increment fault counter
-	  } else
+    } else
       {
-	      readFaultCounter = 0;                                                               // Valid reading reset counter
+	readFaultCounter = 0;                                                               // Valid reading reset counter
         input = (newInput[0]+newInput[1]+newInput[2]+newInput[3]+newInput[4])/5.0f;         // Compute average of last 5 readings
         newInput[4] = newInput[3];                                                          // Update moving average filter
         newInput[3] = newInput[2];
@@ -429,11 +429,11 @@ void loop()
     } else
       {
         lcd.print(input);                                                                   // Print current temperature
-			  #if ARDUINO >= 100
-				  lcd.write((uint8_t)0);                                                            // Print degree Celsius symbol
-			  #else
-				  lcd.print(0, BYTE);                                                               // Print degree Celsius symbol
-			  #endif
+	#if ARDUINO >= 100
+	  lcd.write((uint8_t)0);                                                            // Print degree Celsius symbol
+	#else
+	  lcd.print(0, BYTE);                                                               // Print degree Celsius symbol
+	#endif
         lcd.print("C ");
       }
     lastSecond = millis();
@@ -442,11 +442,11 @@ void loop()
   switch (reflowState)                                                                      // Reflow oven controller state machine
   {
     case REFLOW_STATE_IDLE:                                                                 // If state = IDLE
-		  if (input >= TEMPERATURE_ROOM)                                                        // If oven temperature is still above room temperature
-		  {
-			  reflowState = REFLOW_STATE_TOO_HOT;                                                 // Change to TOO_HOT state 
+      if (input >= TEMPERATURE_ROOM)                                                        // If oven temperature is still above room temperature
+      {
+	reflowState = REFLOW_STATE_TOO_HOT;                                                 // Change to TOO_HOT state 
         reflowStatus = REFLOW_STATUS_OFF;                                                   // Reflow status OFF
-		  } else if (switchStatus == SWITCH_1)                                                  // If switch 1 is pressed to start reflow process
+      } else if (switchStatus == SWITCH_1)                                                  // If switch 1 is pressed to start reflow process
         {
           Serial.println("State,Time,Setpoint,Input,Output");                               // Send header for CSV file
           timerSeconds = 0;                                                                 // Intialize seconds timer for serial debug information
@@ -562,26 +562,30 @@ void loop()
     case REFLOW_STATE_COMPLETE:                                                             // If state = COMPLETE
       if (abs(millis() - lastTimer) > 3000)                                                 // Stay in this state for 3 seconds
       {                                                             
-			  reflowState = REFLOW_STATE_IDLE;                                                    // Proceed to IDLE state
+	reflowState = REFLOW_STATE_IDLE;                                                    // Proceed to IDLE state
       }
       break;
 	
-	  case REFLOW_STATE_TOO_HOT:                                                              // If state = TOO HOT
-		  if (input < TEMPERATURE_ROOM)                                                         // If oven temperature drops below room temperature
-		  {
-			  reflowState = REFLOW_STATE_IDLE;                                                    // Proceed to IDEL State
-		  }
-		  break;
+    case REFLOW_STATE_TOO_HOT:                                                              // If state = TOO HOT
+      if (input < TEMPERATURE_ROOM)                                                         // If oven temperature drops below room temperature
+      {
+         reflowState = REFLOW_STATE_IDLE;                                                    // Proceed to IDEL State
+      }
+      break;
 		
     case REFLOW_STATE_ERROR:
-      if(thermocoupleFault(thermocouple.readThermocouple(CELSIUS)))                         // If thermocouple problem is still present
+      if (abs(millis() - lastTimer) > ONE_SECOND) 
       {
-        reflowState = REFLOW_STATE_ERROR;                                                   // Wait until fault is cleared
-        reflowStatus = REFLOW_STATUS_OFF;                                                   // Turn reflow off
-      } else
+        if(thermocoupleFault(thermocouple.readThermocouple(CELSIUS)))                         // If thermocouple problem is still present
         {
-          reflowState = REFLOW_STATE_IDLE;                                                  // Clear to perform reflow process
-        }
+          reflowState = REFLOW_STATE_ERROR;                                                   // Wait until fault is cleared
+          reflowStatus = REFLOW_STATUS_OFF;                                                   // Turn reflow off
+        } else
+          {
+            reflowState = REFLOW_STATE_IDLE;                                                  // Clear to perform reflow process
+          }
+        lastTimer = millis();
+      }
       break;    
   }    
 
